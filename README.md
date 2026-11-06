@@ -45,8 +45,21 @@
 - **带宽利用率**：148.20 / 187.87 ≈ **78.8%**，逼近该硬件的理论上限。
 - **思考**：通过 Tiling 技术（分块），将全局内存的数据暂存到片上极快的 Shared Memory 中，把“读”和“写”全部转换为合并访存。下一步需解决 Shared Memory 内部的 **Bank Conflict（银行冲突）**（代码中已使用 `tile[32][33]` 进行初步规避）。
 
-## 🎯 后续规划 (Roadmap)
-- [ ] **Day 05**: Bank Conflict（银行冲突）原理与 Padding 技巧验证。
-- [ ] **Day 06-10**: SGEMM 优化四连：Naive -> Shared Memory Tiling -> 向量化/寄存器分块 -> 挑战 cuBLAS。
-- [ ] **Phase 2**: Roofline 模型建立与 Nsight Compute 性能瓶颈定位。
-- [ ] **Phase 3**: YOLOv8 推理热点分析与 TensorRT 低精度部署对比。
+
+### [Phase 0] Day 05: 共享内存 Bank Conflict 及其解决
+**实验目的**：验证 Bank Conflict 的物理机制以及 Padding 技术的优化效果。
+**测试对象**：2048 x 2048 的矩阵转置（使用 Shared Memory）。
+
+| 算法版本 | 耗时 (ms) | 相对性能 |
+| :--- | :--- | :--- |
+| 无 Padding (`tile[32][32]`) | 0.3455 | 基准（存在严重 Bank Conflict）|
+| **有 Padding (`tile[32][33]`)** | **0.2255** | **提升约 53%** |
+
+- **架构原理**：Shared Memory 有 32 个 Bank，无 Padding 时按列读取会导致 32 个线程全部命中同一个 Bank，引发严重的串行化等待。增加 1 列填充后，行宽变为 33（与 32 互质），完美错开 Bank 索引，实现无冲突并发访问。
+
+## 🎯 阶段 0 总结与验收 (Day 01 - Day 05)
+至此，阶段 0（计算机系统与 GPU 基础认知）圆满完成！
+- [x] 掌握 GPU 硬件参数查询与理论带宽计算。
+- [x] 深刻理解 Grid-Block-Thread-Warp 执行模型与 SIMT 机制。
+- [x] 能通过实验验证 Memory Coalescing 对全局内存带宽的决定性影响。
+- [x] 掌握 Shared Memory 的使用，并能利用 Padding 技术消除 Bank Conflict。
