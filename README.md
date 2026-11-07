@@ -63,3 +63,21 @@
 - [x] 深刻理解 Grid-Block-Thread-Warp 执行模型与 SIMT 机制。
 - [x] 能通过实验验证 Memory Coalescing 对全局内存带宽的决定性影响。
 - [x] 掌握 Shared Memory 的使用，并能利用 Padding 技术消除 Bank Conflict。
+
+### [Phase 1] Day 06: Naive GEMM 与 cuBLAS 性能摸底
+**实验目的**：实现最基础的矩阵乘法（C = A * B），并确立性能优化的基准线。
+**测试对象**：1024 x 1024 的单精度（FP32）矩阵乘法。
+
+| 算法版本 | 耗时 (ms) | 算力 (GFLOPS) | 硬件利用率 | 核心瓶颈分析 |
+| :--- | :--- | :--- | :--- | :--- |
+| Naive GEMM | 4.6077 | 466.06 | < 8% | 无数据复用，重复全局内存访存，Memory Bound |
+| **cuBLAS SGEMM** | **0.3706** | **5794.04** | **~100%** | 深度调优：Tiling + 寄存器分块 + 向量化 + 流水线 |
+
+- **架构洞察**：RTX 3050 Ti 的 FP32 理论极限约为 6 TFLOPS。cuBLAS 已贴紧物理极限，而 Naive 版本仅发挥了不到 10% 的算力。这 **12.4 倍** 的差距，正是 AI 架构与性能优化岗位的核心价值所在。
+- **优化 Roadmap**：
+  - [ ] Step 1: 引入 Shared Memory Tiling，消除全局内存重复访问。（预计提升 2-3 倍）
+  - [ ] Step 2: 寄存器分块 (Register Blocking)，减少 SMEM 访问频次。
+  - [ ] Step 3: 向量化访存与 Double Buffering 流水线。
+
+## 🎯 后续规划 (Roadmap)
+... (原有内容保留)
